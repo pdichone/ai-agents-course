@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+from typing import Optional
 
 
 from openai import OpenAI
@@ -13,11 +14,17 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
-from langgraph.checkpoint.sqlite import SqliteSaver
+
+# from langgraph.store.memory import InMemoryStore
+
+# Add this checkpoint saver class:
+
+import json
+
 import pandas as pd
 from io import StringIO
 
-memory = SqliteSaver.from_conn_string(":memory:")
+# memory = InMemoryStore()
 
 
 # Load environment variables from .env file
@@ -27,7 +34,7 @@ openai_key = os.getenv("OPENAI_API_KEY")
 
 tavily = os.getenv("TAVILY_API_KEY")
 
-llm_name = "gpt-3.5-turbo"
+llm_name = "gpt-4o-mini"
 model = ChatOpenAI(api_key=openai_key, model=llm_name)
 
 from tavily import TavilyClient
@@ -36,7 +43,7 @@ tavily = TavilyClient(api_key=tavily)
 
 
 from typing import TypedDict, List
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class AgentState(TypedDict):
@@ -199,7 +206,9 @@ builder.add_edge("collect_feedback", "research_critique")
 builder.add_edge("research_critique", "compare_performance")
 builder.add_edge("compare_performance", "write_report")
 
-graph = builder.compile(checkpointer=memory)
+# graph = builder.compile(checkpointer=memory)
+graph = builder.compile()
+
 
 # ==== For Console Testing ====
 # def read_csv_file(file_path):
@@ -211,9 +220,7 @@ graph = builder.compile(checkpointer=memory)
 # if __name__ == "__main__":
 #     task = "Analyze the financial performance of our (MegaAICo) company compared to competitors"
 #     competitors = ["Microsoft", "Nvidia", "Google"]
-#     csv_file_path = (
-#         "./data/financials.csv"  # Update with the actual path to your CSV file
-#     )
+#     csv_file_path = "./data/financials.csv"
 
 #     if not os.path.exists(csv_file_path):
 #         print(f"CSV file not found at {csv_file_path}")
@@ -227,10 +234,17 @@ graph = builder.compile(checkpointer=memory)
 #             "csv_file": csv_data,
 #             "max_revisions": 2,
 #             "revision_number": 1,
+#             # Add these initialized keys
+#             "content": [],
+#             "financial_data": "",
+#             "analysis": "",
+#             "competitor_data": "",
+#             "comparison": "",
+#             "feedback": "",
+#             "report": ""
 #         }
-#         thread = {"configurable": {"thread_id": "1"}}
 
-#         for s in graph.stream(initial_state, thread):
+#         for s in graph.stream(initial_state):
 #             print(s)
 # === End Console Testing ===
 
@@ -255,23 +269,40 @@ def main():
         # Read the uploaded CSV file
         csv_data = uploaded_file.getvalue().decode("utf-8")
 
+        # Initialize state with all required keys
         initial_state = {
             "task": task,
             "competitors": [comp.strip() for comp in competitors if comp.strip()],
             "csv_file": csv_data,
             "max_revisions": max_revisions,
             "revision_number": 1,
+            # Add these initialized keys
+            "content": [],
+            "financial_data": "",
+            "analysis": "",
+            "competitor_data": "",
+            "comparison": "",
+            "feedback": "",
+            "report": "",
         }
+
+        state_placeholder = st.empty()
+
         thread = {"configurable": {"thread_id": "1"}}
 
-        final_state = None
-        for s in graph.stream(initial_state, thread):
-            st.write(s)
-            final_state = s
+        try:
+            final_state = None
+            for s in graph.stream(initial_state):
+                with state_placeholder.container():
+                    st.write("Current State:", s)
+                final_state = s
 
-        if final_state and "report" in final_state:
-            st.subheader("Final Report")
-            st.write(final_state["report"])
+            if final_state and "report" in final_state:
+                st.subheader("Final Report")
+                st.markdown(final_state["report"])
+
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
 
 
 if __name__ == "__main__":

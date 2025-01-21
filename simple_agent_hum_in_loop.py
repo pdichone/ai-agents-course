@@ -16,7 +16,7 @@ openai_key = os.getenv("OPENAI_API_KEY")
 tavily = os.getenv("TAVILY_API_KEY")
 
 
-llm_name = "gpt-3.5-turbo"
+llm_name = "gpt-4o-mini"
 
 client = OpenAI(api_key=openai_key)
 model = ChatOpenAI(api_key=openai_key, model=llm_name)

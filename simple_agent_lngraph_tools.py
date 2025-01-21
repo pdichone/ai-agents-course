@@ -16,7 +16,7 @@ openai_key = os.getenv("OPENAI_API_KEY")
 tavily = os.getenv("TAVILY_API_KEY")
 
 
-llm_name = "gpt-3.5-turbo"
+llm_name = "gpt-4o-mini"
 
 client = OpenAI(api_key=openai_key)
 model = ChatOpenAI(api_key=openai_key, model=llm_name)
@@ -78,12 +78,18 @@ graph_builder.add_node("bot", bot)
 graph_builder.set_entry_point("bot")
 
 # ADD MEMORY NODE
-from langgraph.checkpoint.sqlite import SqliteSaver
+# from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.memory import MemorySaver
 
-memory = SqliteSaver.from_conn_string(":memory:")
+# memory = SqliteSaver.from_conn_string(":memory:")
+memory = MemorySaver()
 
+# memory = InMemoryStore()
 # STEP 5: Compile the graph
-graph = graph_builder.compile(checkpointer=memory)
+# graph = graph_builder.compile(checkpointer=memory) # no need for checkpointer memory anymore
+graph = graph_builder.compile(
+    checkpointer=memory
+)  # no need for checkpointer memory anymore
 # MEMORY CODE CONTINUES ===
 # Now we can run the chatbot and see how it behaves
 # PICK A TRHEAD FIRST
