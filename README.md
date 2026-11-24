@@ -15,3 +15,9 @@ several imports used in this code.
 
 The human-in-the-loop example (`simple_agent_hum_in_loop.py`) was also updated: newer versions of
 `langgraph-checkpoint-sqlite` no longer accept `SqliteSaver.from_conn_string()` directly as a checkpointer.
+
+## Model update: gpt-6-luna
+
+OpenAI shuts down `gpt-4o-mini` on Jan 14, 2027. The code now uses `gpt-6-luna` with
+`reasoning_effort="none"` (needed for `temperature` and tools). If your screen shows `gpt-4o-mini`
+in a lecture, use the repo code. See `HOTFIX-NOTES.md` for every line that differs from the videos.
